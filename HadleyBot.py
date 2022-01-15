@@ -2,6 +2,9 @@ import tweepy
 import constants
 seenHadleyYet = False
 def makeAPIRequest():
+    """
+    Make a request to the twitter api using tweepy. The access token links it to the account i want to tweet from.
+    """
     #my api key from twitter developer
     consumer_key = constants.CONSUMER_KEY
     # my secret key from twitter developer.
@@ -17,17 +20,28 @@ def makeAPIRequest():
     #me removed from api, use verifyCredentials instead
     #myUserID= (api.me()).id_str;
     return api
-"""
-Searches through the mention timeline and returns a list of the statuses(tweets) which 
-@ the bot. Then, for each, it generates a text response with teh runHadleyBot method, which
-includes the username of the person replying to in it. Then, it calls api.update_status() to 
-post a tweet onto twitter. 
-"""
+
 def searchForMentions(api):
-    newestID = None;
+    """
+    Searches through the mention timeline and returns a list of the statuses(tweets) which
+    @ the bot. Then, for each, it generates a text response with teh runHadleyBot method, which
+    includes the username of the person replying to in it. Then, it calls api.update_status() to
+    post a tweet onto twitter.
+
+    Initializing newest id to the id of the bot's most recent tweet makes it so that
+    """
     running = True
+    #get the most recent tweet by the bot.
+    newestTweet = api.user_timeline(screen_name=constants.BOT_USERNAME, count=1)[0]
+    newestID = None
+    if newestTweet !=None and newestTweet.user.screen_name != constants.BOT_USERNAME:
+        newestID = newestTweet.id
+        print("limit on newest tweet")
+    else:
+        newestID = None
+
     while(running):
-        mentions = api.mentions_timeline(since_id= newestID, count=20)
+        mentions = api.mentions_timeline(since_id= newestID)
         if(len(mentions) == 0):
             print("no mentions")
             break
@@ -37,7 +51,8 @@ def searchForMentions(api):
             #need to include the username in the tweet itself.
             newTweet = api.update_status(status=reply, in_reply_to_status_id=status.id)
             #update the newestID.
-            newestID = newTweet.id
+        newestID = newTweet.id
+
 
 
 def runHadleyBot(status):
@@ -51,7 +66,8 @@ def runHadleyBot(status):
     #need to put the @ at the beginning to reply properly.
     userName = "@" + status.user.screen_name;
     message = chooseMessage(status)
-    tweetText =  userName+ " hey";
+    tweetText =  userName+ " " + message
+    print(tweetText)
     return tweetText;
 
 def chooseMessage(status):
@@ -73,7 +89,6 @@ def chooseMessage(status):
     if len(wordList) != 0 and wordList[0].lower() == "you're" and len(wordList) == 2:
         return "No YOU'RE " + wordList[1]
 
-    seed(12)
     if status !=None and "ash" in status.text.lower():
         randomChoice = randint(0, len(constants.ashList) -1)
         return constants.ashList[randomChoice]
@@ -89,26 +104,18 @@ def chooseMessage(status):
         randomVerbChoice = randint(0, len(constants.verbList)-1)
         randomNounChoice = randint(0, len(constants.nounList)-1)
         return "I want ash to " + constants.verbList[randomVerbChoice] + " my " + constants.nounList[randomNounChoice]
+    #adds hadley specific tweets to the list of possible tweets. This has nothing to do with it always occuring the first time.
+    elif status !=None and status.user.screen_name == constants.INSPIRATION_TWITTER:
+        randomChoice = randint(0, len(constants.totalList) + len(constants.hadleyResponses)-1)
+        if(randomChoice>len(constants.totalList)-1):
+            return constants.hadleyResponses[randomChoice-len(constants.totalList)]
+        else:
+            return constants.hadleyResponses[randomChoice]
     else:
         #minus 1 since inclusive.
         randomChoice = randint(0, len(constants.totalList) - 1)
+        print("here is my choice: " + str(randomChoice))
         return constants.totalList[randomChoice]
-
-
-"""
-makes the list from the file. 
-"""
-def makeListFromFile(fileName):
-    try:
-        with open(fileName,"r") as file:
-            #gets rid of the extra characters like newline. This gets the list of all the lines in the given file.
-            list = [line.strip() for line in file.readlines()]
-            return list
-    except Exception as e:
-        print(str(e))
-        return None
-
-
 def main():
     api = makeAPIRequest();
     searchForMentions(api)
@@ -116,3 +123,18 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def makeListFromFile(fileName):
+    """
+    makes the list from the file. Called from hidden constants.py file.
+    """
+    try:
+        #need the encoding to allow apostrophes.
+        with open(fileName,"r", encoding='utf-8') as file:
+            #gets rid of the extra characters like newline. This gets the list of all the lines in the given file.
+            list = [line.strip() for line in file.readlines()]
+            return list
+    except Exception as e:
+        print(str(e))
+        return None

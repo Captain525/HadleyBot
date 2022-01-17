@@ -12,3 +12,5 @@ constants file, which is also hidden.
 
 ERROR - hadley bot keeps sending tweets when its not supposed to. Exponential growth, responds to its previous replies
 need to make it so it won't respond to itself. Need to fix the updating latest tweet id tihng, but hard to do. 
+
+THIS ERROR IS FIXED, there was a typo where it set newest Id only if it WASn'T a tweet by the bot, meaning it never did. 

@@ -6,6 +6,8 @@ seenHadleyYet = False
 def makeAPIRequest():
     """
     Make a request to the twitter api using tweepy. The access token links it to the account i want to tweet from.
+    Get authentication using the consumer and secret keys, then get the access using the access and secret tokens. Then, you can access
+    the tweepy api with this authentication thing.
     """
     # my api key from twitter developer
     consumer_key = constants.CONSUMER_KEY
@@ -85,12 +87,14 @@ def chooseMessage(status):
     IF the screenname of the user is equal to hadley's screen name(hidden), and you haven't responded to hadley yet on
     this run of the program, it sends a response to her.
     """
+    global seenHadleyYet
     from numpy.random import randint
     if status is None:
         return None
     # if the original hadley tweets the bot for the first in this program, run response using the hadleyResponses list
     if status.user.screen_name == constants.INSPIRATION_TWITTER and not seenHadleyYet:
         randomChoice = randint(0, len(constants.hadleyResponses) - 1)
+        seenHadleyYet = True
         return constants.hadleyResponses[randomChoice]
 
     # check for the format "you're _______"
@@ -158,10 +162,18 @@ def chooseMessage(status):
         return constants.totalList[randomChoice]
 
 def deleteAllTweets(api):
+    """
+    This function deletes all of the bot's tweets.
+    """
+    timeline = api.user_timeline(screen_name = constants.BOT_USERNAME)
+    for status in timeline:
+        api.destroy_status(status.id)
+    print("all tweets deleted!")
 
 def main():
-    api = makeAPIRequest();
+    api = makeAPIRequest()
     searchForMentions(api)
+    #deleteAllTweets(api)
     return 0
 
 
